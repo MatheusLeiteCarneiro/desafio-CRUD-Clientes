@@ -4,14 +4,12 @@ import com.devmlc.clientCRUD.dto.ClientDTO;
 import com.devmlc.clientCRUD.entities.Client;
 import com.devmlc.clientCRUD.exceptions.ResourceNotFoundException;
 import com.devmlc.clientCRUD.repositories.ClientRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
-
-import java.util.List;
 
 @Service
 public class ClientService {
@@ -30,21 +28,34 @@ public class ClientService {
        return page.map(x -> new ClientDTO(x));
     }
 
+    @Transactional
     public ClientDTO insert(ClientDTO dto){
-        Client client = copyDtotoEntity(dto);
+        Client client = new Client();
+        copyDtotoEntity(dto, client);
         client =  repository.save(client);
         return new ClientDTO(client);
     }
 
+    @Transactional
+    public ClientDTO update(Long id, ClientDTO dto) {
+        try {
+            Client client = repository.getReferenceById(id);
+            copyDtotoEntity(dto, client);
+            client = repository.save(client);
+            return new ClientDTO(client);
 
-    private Client copyDtotoEntity(ClientDTO dto){
-        Client newClient = new Client();
-        newClient.setName(dto.getName());
-        newClient.setCpf(dto.getCpf());
-        newClient.setIncome(dto.getIncome());
-        newClient.setBirthDate(dto.getBirthDate());
-        newClient.setChildren(dto.getChildren());
-        return newClient;
+        }
+        catch (EntityNotFoundException e){
+            throw new ResourceNotFoundException("Resource not found");
+        }
+    }
+
+    private void copyDtotoEntity(ClientDTO dto, Client client){
+        client.setName(dto.getName());
+        client.setCpf(dto.getCpf());
+        client.setIncome(dto.getIncome());
+        client.setBirthDate(dto.getBirthDate());
+        client.setChildren(dto.getChildren());
     }
 
 }
