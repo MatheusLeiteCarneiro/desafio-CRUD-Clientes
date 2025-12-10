@@ -2,13 +2,16 @@ package com.devmlc.clientCRUD.services;
 
 import com.devmlc.clientCRUD.dto.ClientDTO;
 import com.devmlc.clientCRUD.entities.Client;
+import com.devmlc.clientCRUD.exceptions.DatabaseIntegrityException;
 import com.devmlc.clientCRUD.exceptions.ResourceNotFoundException;
 import com.devmlc.clientCRUD.repositories.ClientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -47,6 +50,19 @@ public class ClientService {
         }
         catch (EntityNotFoundException e){
             throw new ResourceNotFoundException("Resource not found");
+        }
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public void delete(Long id){
+        if(!repository.existsById(id)){
+            throw new ResourceNotFoundException("Resource not found");
+        }
+        try{
+            repository.deleteById(id);
+        }
+        catch (DataIntegrityViolationException e){
+            throw new DatabaseIntegrityException("Database integrity violated");
         }
     }
 
